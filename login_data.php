@@ -1,5 +1,8 @@
 <?php
-   if(isset($_POST["Submit"])){
+   session_start();
+   require(__DIR__ . "/functions.php");
+   
+   if( isset($_POST["ID"]) && isset($_POST["Password"]) ){
       $data = array(
          'ID' => $_POST["ID"],
          'Password' => md5($_POST["Password"])
@@ -7,30 +10,34 @@
       
       $ch = curl_init();
       curl_setopt($ch, CURLOPT_URL, 'https://afsaccess4.njit.edu/~lg296/middle.php');
-      //POST login data to middle
       curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
       curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-      //GET validation from middle
       $response = curl_exec($ch);
       curl_close($ch);
 
       $response=json_decode($response);
-     
+      
       if ($response[0] == "true"){
-        echo "<h2> Hello, " . $data["ID"] . ". Welcome to the ". $response[1] ." page!";
+        
+        $_SESSION["Logged_In"] = $response[0];
+        $_SESSION["Role"] = $response[1];
+        $_SESSION["ID"] = $response[2];
+        $_SESSION["Username"] = $data["ID"];
+
+        if($_SESSION["Role"] == "Teacher"){
+          redirect("teacher.php");
+         
+        }
+        elseif($_SESSION["Role"] == "Student"){
+          redirect("student.php");
+        }
+ 
       }
       else{
-        echo '<h2>Welcome!</h2>
-            ERROR: Bad Credentials
-            <form method="post" action="login_data.php">
-                <label for="ID">Username:</label><br>
-                <input type="text" value="" name="ID"><br>
-                <label for="Password">Password:</label><br>
-                <input type="password" value="" name="Password"><br><br>
-                <input type="submit" name="Submit" value="Submit">
-            </form>'; 
+        $_SESSION["Error"] = "Invalid Credentials!"; 
+        redirect("index.php");
+        
       }
     
     }
-   
 ?>
